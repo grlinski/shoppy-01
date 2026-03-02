@@ -1,5 +1,19 @@
 import { useRef, useState } from "react";
-import { View, StyleSheet, Button, Alert, Text, ScrollView, ActivityIndicator } from "react-native";
+import { useEntries } from "../../context/EntriesContext";
+
+
+
+import {
+  View,
+  StyleSheet,
+  Button,
+  Alert,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  Modal,
+  TouchableOpacity,
+} from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { extractHandwritingFromImage } from "../../utils/ocr";
@@ -9,8 +23,10 @@ export default function CameraScreen() {
   const [type, setType] = useState<CameraType>("back");
   const [extractedText, setExtractedText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const cameraRef = useRef<any>(null);
   const router = useRouter();
+  const { addEntry } = useEntries();
 
   if (!permission) return <View />;
 
@@ -30,7 +46,9 @@ export default function CameraScreen() {
           setExtractedText(null);
           setLoading(true);
           const text = await extractHandwritingFromImage(photo.uri);
+          addEntry(text);
           setExtractedText(text);
+          setModalVisible(true);
         }
       } catch (err) {
         console.error("Failed:", err);
@@ -41,14 +59,31 @@ export default function CameraScreen() {
     }
   };
 
+  const handleRetry = () => {
+    setModalVisible(false);
+    setExtractedText(null);
+  };
+
+  const handleViewAll = () => {
+    setModalVisible(false);
+    router.push("./results"); // adjust path to match your results screen route
+  };
+
   return (
     <View style={styles.container}>
-      {/* Camera takes up top half */}
       <CameraView
         style={styles.camera}
         facing={type}
         ref={cameraRef}
       />
+
+      {/* Loading overlay */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Extracting text...</Text>
+        </View>
+      )}
 
       <View style={styles.controls}>
         <Button title="Flip" onPress={() => setType(type === "back" ? "front" : "back")} />
@@ -56,18 +91,32 @@ export default function CameraScreen() {
         <Button title="Close" onPress={() => router.back()} />
       </View>
 
-      {/* Results area */}
-      <View style={styles.results}>
-        {loading ? (
-          <ActivityIndicator size="large" />
-        ) : extractedText ? (
-          <ScrollView>
-            <Text style={styles.resultText}>{extractedText}</Text>
-          </ScrollView>
-        ) : (
-          <Text style={styles.placeholder}>Recognized text will appear here</Text>
-        )}
-      </View>
+      {/* Result modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleRetry}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Extracted Text</Text>
+
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.modalText}>{extractedText}</Text>
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.buttonSecondary} onPress={handleRetry}>
+                <Text style={styles.buttonSecondaryText}>Retry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.buttonPrimary} onPress={handleViewAll}>
+                <Text style={styles.buttonPrimaryText}>View All</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -78,22 +127,72 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingVertical: 12,
+    paddingVertical: 120,
     backgroundColor: "#000",
   },
-  results: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#f9f9f9",
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  resultText: {
+  loadingText: {
+    color: "#fff",
+    marginTop: 12,
     fontSize: 16,
-    lineHeight: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    maxHeight: "60%",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 12,
     color: "#111",
   },
-  placeholder: {
-    color: "#aaa",
-    textAlign: "center",
-    marginTop: 16,
+  modalScroll: {
+    marginBottom: 16,
+  },
+  modalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#333",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  buttonPrimary: {
+    flex: 1,
+    backgroundColor: "#007AFF",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonPrimaryText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  buttonSecondary: {
+    flex: 1,
+    backgroundColor: "#f0f0f0",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonSecondaryText: {
+    color: "#333",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });

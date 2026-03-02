@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
-import Banner from "./components/banner";
-import CameraButton from "./components/camerabutton";
+import Banner from "../components/banner";
+import CameraButton from "../components/camerabutton";
 import { useRouter } from "expo-router";
 
 
@@ -29,7 +29,7 @@ export default function Index() {
 <View style={{ flex: 1, justifyContent: "flex-end", alignItems: "center", paddingBottom: 60 }}>
       <CameraButton
         size={120}
-        onPress={() => router.push("/components/camerascreen")}
+        onPress={() => router.push("./camerascreen")}
       />
     </View>
     </View>

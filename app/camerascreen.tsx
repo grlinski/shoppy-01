@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { useEntries } from "../../context/EntriesContext";
+import { useEntries } from "../context/EntriesContext";
 
 
 
@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
-import { extractHandwritingFromImage } from "../../utils/ocr";
+import { extractHandwritingFromImage } from "../utils/ocr";
 
 export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -66,7 +66,7 @@ export default function CameraScreen() {
 
   const handleViewAll = () => {
     setModalVisible(false);
-    router.push("./results"); // adjust path to match your results screen route
+    router.push("./viewlists"); // adjust path to match your viewlist screen route
   };
 
   return (

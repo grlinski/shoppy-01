@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useEntries } from "../context/EntriesContext";
+import { parseGroceryList, GroceryItem } from "../utils/parseGroceryList";
 
 
 
@@ -27,6 +28,8 @@ export default function CameraScreen() {
   const cameraRef = useRef<any>(null);
   const router = useRouter();
   const { addEntry } = useEntries();
+  const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([]);
+
 
   if (!permission) return <View />;
 
@@ -42,14 +45,18 @@ export default function CameraScreen() {
     if (cameraRef.current) {
       try {
         const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
+        
         if (photo?.uri) {
           setExtractedText(null);
           setLoading(true);
           const text = await extractHandwritingFromImage(photo.uri);
-          addEntry(text);
+          const items = await parseGroceryList(text);
+          addEntry(text, items);
           setExtractedText(text);
+          setGroceryItems(items);
           setModalVisible(true);
-        }
+                              
+                  }
       } catch (err) {
         console.error("Failed:", err);
         Alert.alert("Error", "Could not extract text.");

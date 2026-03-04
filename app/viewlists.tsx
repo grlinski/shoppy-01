@@ -1,8 +1,3 @@
-
-//Maybe rename to lists?
-
-
-
 import { useState } from "react";
 import {
   View,
@@ -16,14 +11,14 @@ import {
 import { useRouter } from "expo-router";
 import { useEntries, Entry } from "../context/EntriesContext";
 
-export default function ResultsScreen() {
-  const { entries, updateEntry, updateTitle, deleteEntry } = useEntries();
+export default function ViewListsScreen() {
+  const { entries, updateEntry, deleteEntry } = useEntries(); // removed updateTitle
   const router = useRouter();
 
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
-  const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editTextValue, setEditTextValue] = useState("");
-  const [editTitleValue, setEditTitleValue] = useState("");
+
+  // removed all editingTitleId, editTitleValue, handleEditTitle, handleSaveTitle
 
   const handleEditText = (item: Entry) => {
     setEditingTextId(item.id);
@@ -33,16 +28,6 @@ export default function ResultsScreen() {
   const handleSaveText = (id: string) => {
     updateEntry(id, editTextValue);
     setEditingTextId(null);
-  };
-
-  const handleEditTitle = (item: Entry) => {
-    setEditingTitleId(item.id);
-    setEditTitleValue(item.title);
-  };
-
-  const handleSaveTitle = (id: string) => {
-    updateTitle(id, editTitleValue);
-    setEditingTitleId(null);
   };
 
   const handleDelete = (id: string) => {
@@ -58,40 +43,15 @@ export default function ResultsScreen() {
 
   const renderItem = ({ item }: { item: Entry }) => (
     <View style={styles.card}>
-      {/* Title row */}
+      {/* Title row — read only, no edit button */}
       <View style={styles.titleRow}>
-        {editingTitleId === item.id ? (
-          <TextInput
-            style={styles.titleInput}
-            value={editTitleValue}
-            onChangeText={setEditTitleValue}
-            autoFocus
-            onBlur={() => handleSaveTitle(item.id)}
-            onSubmitEditing={() => handleSaveTitle(item.id)}
-          />
-        ) : (
-          <Text style={styles.title}>{item.title}</Text>
-        )}
-        <View style={styles.titleActions}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() =>
-              editingTitleId === item.id
-                ? handleSaveTitle(item.id)
-                : handleEditTitle(item)
-            }
-          >
-            <Text style={styles.iconButtonText}>
-              {editingTitleId === item.id ? "Save" : "Edit"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDelete(item.id)}
-          >
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>{item.title}</Text>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDelete(item.id)}
+        >
+          <Text style={styles.deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Text body */}
@@ -105,6 +65,21 @@ export default function ResultsScreen() {
         />
       ) : (
         <Text style={styles.text}>{item.text}</Text>
+      )}
+
+      {/* Parsed grocery items */}
+      {item.items.length > 0 && (
+        <View style={styles.itemsContainer}>
+          <Text style={styles.itemsTitle}>Parsed Items</Text>
+          {item.items.map((grocery, index) => (
+            <View key={index} style={styles.groceryRow}>
+              <Text style={styles.groceryName}>{grocery.name}</Text>
+              <Text style={styles.groceryQty}>
+                {grocery.quantity}{grocery.unit ? ` ${grocery.unit}` : ""}
+              </Text>
+            </View>
+          ))}
+        </View>
       )}
 
       {/* Edit/Save text button */}
@@ -129,7 +104,7 @@ export default function ResultsScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.back}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>All Results</Text>
+        <Text style={styles.headerTitle}>All Lists</Text>
       </View>
 
       {entries.length === 0 ? (
@@ -179,23 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: { fontSize: 16, fontWeight: "600", color: "#111", flex: 1 },
-  titleInput: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "600",
-    borderBottomWidth: 1,
-    borderBottomColor: "#007AFF",
-    paddingVertical: 2,
-    color: "#111",
-  },
   titleActions: { flexDirection: "row", gap: 8 },
-  iconButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: "#e8f0fe",
-  },
-  iconButtonText: { color: "#007AFF", fontSize: 13, fontWeight: "500" },
   deleteButton: {
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -225,4 +184,25 @@ const styles = StyleSheet.create({
   editTextButtonText: { color: "#333", fontSize: 13, fontWeight: "500" },
   empty: { flex: 1, justifyContent: "center", alignItems: "center", padding: 32 },
   emptyText: { color: "#aaa", textAlign: "center", fontSize: 16 },
+  itemsContainer: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingTop: 10,
+  },
+  itemsTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#aaa",
+    marginBottom: 6,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  groceryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  groceryName: { fontSize: 15, color: "#333" },
+  groceryQty: { fontSize: 15, color: "#888" },
 });
